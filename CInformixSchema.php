@@ -124,7 +124,7 @@ class CInformixSchema extends CDbSchema {
 //        return true;
         $sql = <<<EOD
 SELECT syscolumns. *,
-NOT (MOD (coltype,256) < coltype) AS allownull,
+NOT (coltype>255) AS allownull,
 CASE MOD(coltype, 256)
   WHEN  0 THEN 'char'
   WHEN  1 THEN 'smallint'
@@ -152,7 +152,38 @@ CASE MOD(coltype, 256)
   WHEN 40 THEN 'Variable-length'
   WHEN 4118 THEN 'Named ROW'
   ELSE '???'
-END AS type
+END AS type,
+CASE
+    WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)                
+    WHEN mod(coltype,256) in (10,14) THEN                   
+        CASE trunc(mod(collength,256)/16)                        
+            WHEN  0 THEN "YEAR"                        
+            WHEN  2 THEN "MONTH"                        
+            WHEN  4 THEN "DAY"                        
+            WHEN  6 THEN "HOUR"                        
+            WHEN  8 THEN "MINUTE"                        
+            WHEN 10 THEN "SECOND"                        
+            WHEN 11 THEN "FRACTION(1)"                        
+            WHEN 12 THEN "FRACTION(2)"                        
+            WHEN 13 THEN "FRACTION(3)"                        
+            WHEN 14 THEN "FRACTION(4)"                        
+            WHEN 15 THEN "FRACTION(5)"                     
+        END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") : "||                       
+        CASE mod(collength,16)                        
+            WHEN  0 THEN "YEAR"                        
+            WHEN  2 THEN "MONTH"                        
+            WHEN  4 THEN "DAY"                        
+            WHEN  6 THEN "HOUR"                        
+            WHEN  8 THEN "MINUTE"                        
+            WHEN 10 THEN "SECOND"                        
+            WHEN 11 THEN "FRACTION(1)"                        
+            WHEN 12 THEN "FRACTION(2)"                        
+            WHEN 13 THEN "FRACTION(3)"                        
+            WHEN 14 THEN "FRACTION(4)"                        
+            WHEN 15 THEN "FRACTION(5)"                     
+        END                 
+    ELSE ""||collength          
+END collength
 FROM systables 
   INNER JOIN syscolumns ON syscolumns.tabid = systables.tabid
 WHERE systables.tabid >= 100
