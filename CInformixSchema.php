@@ -73,6 +73,26 @@ class CInformixSchema extends CDbSchema {
     }
 
     /**
+     * Quotes a table name for use in a query.
+     * A simple table name does not schema prefix.
+     * @param string $name table name
+     * @return string the properly quoted table name
+     */
+    public function quoteSimpleTableName($name) {
+        return $name;
+    }
+
+    /**
+     * Quotes a column name for use in a query.
+     * A simple column name does not contain prefix.
+     * @param string $name column name
+     * @return string the properly quoted column name
+     */
+    public function quoteSimpleColumnName($name) {
+        return $name;
+    }
+
+    /**
      * Generates various kinds of table names.
      * @param CInformixTableSchema $table the table instance
      * @param string $name the unquoted table name
