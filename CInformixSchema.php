@@ -219,29 +219,29 @@ EOD;
      */
     protected function createColumn($column) {
         $c = new CInformixColumnSchema;
-        $c->name = $column['COLNAME'];
+        $c->name = $column['colname'];
         $c->rawName = $this->quoteColumnName($c->name);
-        $c->allowNull = $column['ALLOWNULL'];
+        $c->allowNull = $column['allownull'];
         $c->isPrimaryKey = false;
         $c->isForeignKey = false;
 
-        if (strpos($column['TYPE'], 'char') !== false || strpos($column['TYPE'], 'text') !== false) {
-            $c->size = $column['COLLENGTH'];
-        } elseif (preg_match('/(real|float|double|decimal)/', $column['TYPE'])) {
-            $length = explode(",", $column['COLLENGTH']);
+        if (strpos($column['type'], 'char') !== false || strpos($column['type'], 'text') !== false) {
+            $c->size = $column['collength'];
+        } elseif (preg_match('/(real|float|double|decimal)/', $column['type'])) {
+            $length = explode(",", $column['collength']);
             $c->size = $length[0];
             $c->precision = $length[0];
             $c->scale = $length[1];
         }
 
 
-        if (stripos($column['TYPE'], 'serial') !== false) {
+        if (stripos($column['type'], 'serial') !== false) {
             $c->autoIncrement = true;
         } else {
             $c->autoIncrement = false;
         }
 
-        $c->init($column['TYPE'], null);
+        $c->init($column['type'], null);
         return $c;
     }
 
@@ -262,10 +262,10 @@ EOD;
         $command->bindValue(':table', $table->name);
         $command->bindValue(':schema', $table->schemaName);
         foreach ($command->queryAll() as $row) {
-            if ($row['CONSTRTYPE'] === 'P') { // primary key
-                $this->findPrimaryKey($table, $row['IDXNAME']);
-            } elseif ($row['CONSTRTYPE'] === 'R') { // foreign key
-                $this->findForeignKey($table, $row['IDXNAME']);
+            if ($row['constrtype'] === 'P') { // primary key
+                $this->findPrimaryKey($table, $row['idxname']);
+            } elseif ($row['constrtype'] === 'R') { // foreign key
+                $this->findForeignKey($table, $row['idxname']);
             }
         }
     }
@@ -294,7 +294,7 @@ EOD;
             $command->bindValue(":indice$i", $indice);
         }
         foreach ($command->queryAll() as $row) {
-            $name = $row['COLNAME'];
+            $name = $row['colname'];
             if (isset($table->columns[$name])) {
                 $table->columns[$name]->isPrimaryKey = true;
                 if ($table->primaryKey === null)
@@ -339,11 +339,11 @@ EOD;
             $command->bindValue(":indice$i", $indice);
         }
         foreach ($command->queryAll() as $row) {
-            $name = $row['COLUMNBASE'];
+            $name = $row['columnbase'];
             if (isset($table->columns[$name])) {
                 $table->columns[$name]->isForeignKey = true;
             }
-            $table->foreignKeys[$name] = array($row['TABLEREFERENCE'], $row['COLUMNREFERENCE']);
+            $table->foreignKeys[$name] = array($row['tablereference'], $row['columnreference']);
         }
     }
 
@@ -372,9 +372,9 @@ EOD;
         $names = array();
         foreach ($rows as $row) {
             if ($schema === self::DEFAULT_SCHEMA)
-                $names[] = $row['TABNAME'];
+                $names[] = $row['tabname'];
             else
-                $names[] = $row['OWNER'] . '.' . $row['TABNAME'];
+                $names[] = $row['owner'] . '.' . $row['tabname'];
         }
         return $names;
     }

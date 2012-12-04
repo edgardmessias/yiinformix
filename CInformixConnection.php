@@ -15,6 +15,11 @@
  */
 class CInformixConnection extends CDbConnection {
 
+    protected function initConnection($pdo) {
+        parent::initConnection($pdo);
+        $this->setAttribute(PDO::ATTR_CASE, PDO::CASE_NATURAL);
+    }
+
     public $driverMap = array(
         'informix' => 'CInformixSchema', // Informix driver
     );
