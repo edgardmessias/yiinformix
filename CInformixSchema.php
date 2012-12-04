@@ -388,4 +388,30 @@ EOD;
         return new CInformixCommandBuilder($this);
     }
 
+    /**
+     * Builds a SQL statement for renaming a column.
+     * @param string $table the table whose column is to be renamed. The name will be properly quoted by the method.
+     * @param string $name the old name of the column. The name will be properly quoted by the method.
+     * @param string $newName the new name of the column. The name will be properly quoted by the method.
+     * @return string the SQL statement for renaming a DB column.
+     */
+    public function renameColumn($table, $name, $newName) {
+        return "RENAME COLUMN " . $this->quoteTableName($table) . "." . $this->quoteColumnName($name)
+                . " TO " . $this->quoteColumnName($newName);
+    }
+
+    /**
+     * Builds a SQL statement for changing the definition of a column.
+     * @param string $table the table whose column is to be changed. The table name will be properly quoted by the method.
+     * @param string $column the name of the column to be changed. The name will be properly quoted by the method.
+     * @param string $type the new column type. The {@link getColumnType} method will be invoked to convert abstract column type (if any)
+     * into the physical one. Anything that is not recognized as abstract type will be kept in the generated SQL.
+     * For example, 'string' will be turned into 'varchar(255)', while 'string not null' will become 'varchar(255) not null'.
+     * @return string the SQL statement for changing the definition of a column.
+     */
+    public function alterColumn($table, $column, $type) {
+        return 'ALTER TABLE ' . $this->quoteTableName($table)
+                . ' MODIFY (' . $this->quoteColumnName($column) . ' ' . $this->getColumnType($type) . ')';
+    }
+
 }
