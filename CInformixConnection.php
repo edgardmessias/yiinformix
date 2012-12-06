@@ -24,6 +24,15 @@ class CInformixConnection extends CDbConnection {
         'informix' => 'CInformixSchema', // Informix driver
     );
 
+    public function getPdoType($type) {
+
+        if ($type == 'NULL') {
+            return PDO::PARAM_STR;
+        } else {
+            return parent::getPdoType($type);
+        }
+    }
+
 }
 
 Yii::import("ext.yiinformix.CInformixTableSchema");
