@@ -59,16 +59,6 @@ class CInformixSchema extends CDbSchema {
                 }
             }
         }
-//        if (is_string($table->primaryKey))
-//            $table->sequenceName = $this->_sequences[$table->rawName . '.' . $table->primaryKey];
-//        elseif (is_array($table->primaryKey)) {
-//            foreach ($table->primaryKey as $pk) {
-//                if (isset($this->_sequences[$table->rawName . '.' . $pk])) {
-//                    $table->sequenceName = $this->_sequences[$table->rawName . '.' . $pk];
-//                    break;
-//                }
-//            }
-//        }
         return $table;
     }
 
@@ -207,6 +197,11 @@ EOD;
 
         foreach ($columns as $column) {
             $c = $this->createColumn($column);
+
+            if ($c->autoIncrement) {
+                $this->_sequences[$table->rawName . '.' . $c->name] = $table->schemaName . '.' . $table->rawName . '.' . $c->name;
+            }
+
             $table->columns[$c->name] = $c;
         }
         return true;
