@@ -20,7 +20,7 @@ Support the informix database in Yii Framework
   'components' => array(
   ...
     'db' => array(
-      'connectionString' => 'informix:host=host;service=port;database=database;server=server;protocol=onsoctcp',
+      'connectionString' => 'informix:host=host;service=port;database=database;server=server;protocol=onsoctcp;CLIENT_LOCALE=en_US.utf8;DB_LOCALE=en_US.8859-1;EnableScrollableCursors=1',
       'username' => 'username',
       'password' => 'password',
       'class' => 'ext.yiinformix.CInformixConnection',
