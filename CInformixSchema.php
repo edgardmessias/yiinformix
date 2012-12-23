@@ -359,7 +359,6 @@ SELECT tabname, owner FROM systables
 WHERE owner=:schema 
 AND   tabtype='T' 
 AND   tabid >= 100
-AND   tabname LIKE 'frp_%'
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
         $command->bindParam(':schema', $schema);
