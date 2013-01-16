@@ -271,33 +271,53 @@ EOD;
      * @param string $indice pgsql primary key index list
      */
     protected function findPrimaryKey($table, $indice) {
-        $sqlArray = array();
-        for ($i = 1; $i <= 16; $i++) {
-            $sqlTmp = <<<EOD
-SELECT syscolumns.colname
-FROM sysindexes 
-  INNER JOIN syscolumns ON syscolumns.tabid = sysindexes.tabid AND syscolumns.colno = sysindexes.part$i
-WHERE idxname = :indice$i
+        $sql = <<<EOD
+SELECT tabid
+       part1,
+       part2,
+       part3,
+       part4,
+       part5,
+       part6,
+       part7,
+       part8,
+       part9,
+       part10,
+       part11,
+       part12,
+       part13,
+       part14,
+       part15,
+       part16
+FROM sysindexes
+WHERE idxname = :indice;
 EOD;
-            $sqlArray[] = $sqlTmp;
-        }
-        $sql = implode(" UNION ALL ", $sqlArray);
+
         $command = $this->getDbConnection()->createCommand($sql);
-//        $command->bindValue(':table', $table->name);
-//        $command->bindValue(':schema', $table->schemaName);
-        for ($i = 1; $i <= 16; $i++) {
-            $command->bindValue(":indice$i", $indice);
-        }
+        $command->bindValue(":indice", $indice);
         foreach ($command->queryAll() as $row) {
-            $name = $row['colname'];
-            if (isset($table->columns[$name])) {
-                $table->columns[$name]->isPrimaryKey = true;
-                if ($table->primaryKey === null)
-                    $table->primaryKey = $name;
-                elseif (is_string($table->primaryKey))
-                    $table->primaryKey = array($table->primaryKey, $name);
-                else
-                    $table->primaryKey[] = $name;
+
+            $qry = "SELECT TRIM(colname) as colname FROM syscolumns where tabid = :tabid ORDER BY colno ";
+            $columns = $this->getDbConnection()->createCommand($qry)->queryAll(FALSE, array(':tabid' => $row['tabid']));
+
+            for ($x = 0; $x < 16; $x++) {
+                $colno = $row["part{$x}"];
+                if ($colno == 0) {
+                    continue;
+                }
+                if ($colno < 0) {
+                    $colno *= -1;
+                }
+                $colname = $columns[$colno - 1];
+                if (isset($table->columns[$colname])) {
+                    $table->columns[$colname]->isPrimaryKey = true;
+                    if ($table->primaryKey === null)
+                        $table->primaryKey = $colname;
+                    elseif (is_string($table->primaryKey))
+                        $table->primaryKey = array($table->primaryKey, $colname);
+                    else
+                        $table->primaryKey[] = $colname;
+                }
             }
         }
     }
