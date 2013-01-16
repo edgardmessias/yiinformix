@@ -35,8 +35,4 @@ class CInformixConnection extends CDbConnection {
 
 }
 
-Yii::import("ext.yiinformix.CInformixTableSchema");
-Yii::import("ext.yiinformix.CInformixSchema");
-Yii::import("ext.yiinformix.CInformixColumnSchema");
-Yii::import("ext.yiinformix.CInformixTableSchema");
-Yii::import("ext.yiinformix.CInformixCommandBuilder");
+Yii::import("ext.yiinformix.*");
