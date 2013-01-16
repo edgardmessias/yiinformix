@@ -355,10 +355,21 @@ EOD;
         set_time_limit(600);
 
         $sql = <<<EOD
-SELECT tabname, owner FROM systables
-WHERE owner=:schema 
-AND   tabtype='T' 
-AND   tabid >= 100
+SELECT tabname,
+       owner,
+       CASE
+         WHEN systables.flags = 16 AND systables.tabtype = 'T' THEN 'R'
+         WHEN systables.tabid IN (SELECT T.tabid
+                                  FROM systables T,
+                                       sysams A
+                                  WHERE A.am_type = 'P'
+                                  AND   T.am_id = A.am_id) THEN 'X'
+         ELSE systables.tabtype
+       END AS tabtype
+FROM systables
+WHERE systables.tabid >= 100
+AND   systables.owner=:schema 
+ORDER BY systables.tabname;
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
         $command->bindParam(':schema', $schema);
