@@ -35,4 +35,7 @@ class CInformixConnection extends CDbConnection {
 
 }
 
-Yii::import("ext.yiinformix.*");
+$dir = dirname(__FILE__);
+$alias = md5($dir);
+Yii::setPathOfAlias($alias, $dir);
+Yii::import($alias . '.*');
