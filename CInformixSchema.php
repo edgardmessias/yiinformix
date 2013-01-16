@@ -240,6 +240,17 @@ EOD;
         return $c;
     }
 
+    protected function getColumnsNumber($tabid) {
+        $qry = "SELECT colno, TRIM(colname) as colname FROM syscolumns where tabid = :tabid ORDER BY colno ";
+        $command = $this->getDbConnection()->createCommand($qry);
+        $command->bindValue(':tabid', $tabid);
+        $columns = array();
+        foreach ($command->queryAll() as $row) {
+            $columns[$row['colno']] = $row['colname'];
+        }
+        return $columns;
+    }
+
     /**
      * Collects the primary and foreign key column details for the given table.
      * @param CInformixTableSchema $table the table metadata
@@ -272,7 +283,7 @@ EOD;
      */
     protected function findPrimaryKey($table, $indice) {
         $sql = <<<EOD
-SELECT tabid
+SELECT tabid,
        part1,
        part2,
        part3,
@@ -297,8 +308,7 @@ EOD;
         $command->bindValue(":indice", $indice);
         foreach ($command->queryAll() as $row) {
 
-            $qry = "SELECT TRIM(colname) as colname FROM syscolumns where tabid = :tabid ORDER BY colno ";
-            $columns = $this->getDbConnection()->createCommand($qry)->queryAll(FALSE, array(':tabid' => $row['tabid']));
+            $columns = $this->getColumnsNumber($row['tabid']);
 
             for ($x = 0; $x < 16; $x++) {
                 $colno = $row["part{$x}"];
@@ -308,7 +318,7 @@ EOD;
                 if ($colno < 0) {
                     $colno *= -1;
                 }
-                $colname = $columns[$colno - 1];
+                $colname = $columns[$colno];
                 if (isset($table->columns[$colname])) {
                     $table->columns[$colname]->isPrimaryKey = true;
                     if ($table->primaryKey === null)
@@ -328,37 +338,84 @@ EOD;
      * @param string $indice pgsql foreign key definition
      */
     protected function findForeignKey($table, $indice) {
-        $sqlArray = array();
-        for ($i = 1; $i <= 16; $i++) {
-            $sqlTmp = <<<EOD
-SELECT syscolumns.colname as columnbase,
-       stf.tabname as tablereference,
-       sclf.colname as columnreference
+        $sql = <<<EOD
+SELECT sysindexes.tabid AS basetabid,
+       sysindexes.part1 AS basepart1,
+       sysindexes.part2 as basepart2,
+       sysindexes.part3 as basepart3,
+       sysindexes.part4 as basepart4,
+       sysindexes.part5 as basepart5,
+       sysindexes.part6 as basepart6,
+       sysindexes.part7 as basepart7,
+       sysindexes.part8 as basepart8,
+       sysindexes.part9 as basepart9,
+       sysindexes.part10 as basepart10,
+       sysindexes.part11 as basepart11,
+       sysindexes.part12 as basepart12,
+       sysindexes.part13 as basepart13,
+       sysindexes.part14 as basepart14,
+       sysindexes.part15 as basepart15,
+       sysindexes.part16 as basepart16,
+       stf.tabid AS reftabid,
+       stf.tabname AS reftabname,
+       sif.part1 as refpart1,
+       sif.part2 as refpart2,
+       sif.part3 as refpart3,
+       sif.part4 as refpart4,
+       sif.part5 as refpart5,
+       sif.part6 as refpart6,
+       sif.part7 as refpart7,
+       sif.part8 as refpart8,
+       sif.part9 as refpart9,
+       sif.part10 as refpart10,
+       sif.part11 as refpart11,
+       sif.part12 as refpart12,
+       sif.part13 as refpart13,
+       sif.part14 as refpart14,
+       sif.part15 as refpart15,
+       sif.part16 as refpart16
 FROM sysindexes 
   INNER JOIN sysconstraints ON sysconstraints.idxname = sysindexes.idxname 
   INNER JOIN sysreferences ON sysreferences.constrid = sysconstraints.constrid 
-  INNER JOIN syscolumns ON syscolumns.colno = sysindexes.part$i AND syscolumns.tabid = sysindexes.tabid 
   INNER JOIN systables AS stf ON stf.tabid = sysreferences.ptabid 
   INNER JOIN sysconstraints AS scf ON scf.constrid = sysreferences. 'primary' 
-  INNER JOIN sysindexes AS sif ON sif.idxname = scf.idxname 
-  INNER JOIN syscolumns AS sclf ON sclf.colno = sif.part$i AND sclf.tabid = sysreferences.ptabid
-WHERE sysindexes.idxname = :indice$i
+  INNER JOIN sysindexes AS sif ON sif.idxname = scf.idxname
+WHERE sysindexes.idxname = :indice;    
+
 EOD;
-            $sqlArray[] = $sqlTmp;
-        }
-        $sql = implode(" UNION ALL ", $sqlArray);
         $command = $this->getDbConnection()->createCommand($sql);
-//        $command->bindValue(':table', $table->name);
-//        $command->bindValue(':schema', $table->schemaName);
-        for ($i = 1; $i <= 16; $i++) {
-            $command->bindValue(":indice$i", $indice);
-        }
+        $command->bindValue(":indice", $indice);
+
+
         foreach ($command->queryAll() as $row) {
-            $name = $row['columnbase'];
-            if (isset($table->columns[$name])) {
-                $table->columns[$name]->isForeignKey = true;
+            $columnsbase = $this->getColumnsNumber($row['basetabid']);
+
+            $columnsrefer = $this->getColumnsNumber($row['reftabid']);
+
+            for ($x = 0; $x < 16; $x++) {
+                $colnobase = $row["basepart{$x}"];
+                if ($colnobase == 0) {
+                    continue;
+                }
+                if ($colnobase < 0) {
+                    $colnobase *= -1;
+                }
+                $colnamebase = $columnsbase[$colnobase];
+
+                $colnoref = $row["refpart{$x}"];
+                if ($colnoref == 0) {
+                    continue;
+                }
+                if ($colnoref < 0) {
+                    $colnoref *= -1;
+                }
+                $colnameref = $columnsrefer[$colnoref];
+
+                if (isset($table->columns[$colnamebase])) {
+                    $table->columns[$colnamebase]->isForeignKey = true;
+                }
+                $table->foreignKeys[$colnamebase] = array($row['reftabname'], $colnameref);
             }
-            $table->foreignKeys[$name] = array($row['tablereference'], $row['columnreference']);
         }
     }
 
