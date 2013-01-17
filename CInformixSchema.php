@@ -363,7 +363,8 @@ SELECT sysindexes.tabid AS basetabid,
        sysindexes.part15 as basepart15,
        sysindexes.part16 as basepart16,
        stf.tabid AS reftabid,
-       stf.tabname AS reftabname,
+       TRIM(stf.tabname) AS reftabname,
+       TRIM(stf.owner) AS refowner,
        sif.part1 as refpart1,
        sif.part2 as refpart2,
        sif.part3 as refpart3,
@@ -420,7 +421,7 @@ EOD;
                 if (isset($table->columns[$colnamebase])) {
                     $table->columns[$colnamebase]->isForeignKey = true;
                 }
-                $table->foreignKeys[$colnamebase] = array($row['reftabname'], $colnameref);
+                $table->foreignKeys[$colnamebase] = array($row['refowner'] . '.' . $row['reftabname'], $colnameref);
             }
         }
     }
@@ -462,7 +463,7 @@ EOD;
         $rows = $command->queryAll();
         $names = array();
         foreach ($rows as $row) {
-                $names[] = $row['owner'] . '.' . $row['tabname'];
+            $names[] = $row['owner'] . '.' . $row['tabname'];
         }
         return $names;
     }
