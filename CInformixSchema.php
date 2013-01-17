@@ -426,11 +426,6 @@ EOD;
      * @return array all table names in the database.
      */
     protected function findTableNames($schema = '') {
-        if ($schema === '')
-            $schema = self::DEFAULT_SCHEMA;
-
-        set_time_limit(600);
-
         $sql = <<<EOD
 SELECT tabname,
        owner,
@@ -445,11 +440,19 @@ SELECT tabname,
        END AS tabtype
 FROM systables
 WHERE systables.tabid >= 100
+EOD;
+        if ($schema !== '') {
+            $sql .= <<<EOD
 AND   systables.owner=:schema 
+EOD;
+        }
+        $sql .= <<<EOD
 ORDER BY systables.tabname;
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
-        $command->bindParam(':schema', $schema);
+        if ($schema !== '') {
+            $command->bindParam(':schema', $schema);
+        }
         $rows = $command->queryAll();
         $names = array();
         foreach ($rows as $row) {
