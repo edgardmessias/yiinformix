@@ -52,4 +52,23 @@ class CInformixColumnSchema extends CDbColumnSchema {
         // else is null
     }
 
+    /**
+     * Converts the input value to the type that this column is of.
+     * @param mixed $value input value
+     * @return mixed converted value
+     */
+    public function typecast($value) {
+        if (gettype($value) === $this->type || $value === null || $value instanceof CDbExpression)
+            return $value;
+        if ($value === '' && $this->allowNull)
+            return $this->type === 'string' ? '' : null;
+        switch ($this->type) {
+            case 'string': return (string) $value;
+            case 'integer': return (integer) $value;
+            case 'boolean': return $value ? 't' : 'f';
+            case 'double':
+            default: return $value;
+        }
+    }
+
 }
