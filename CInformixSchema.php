@@ -36,6 +36,7 @@ class CInformixSchema extends CDbSchema {
         'money' => 'money',
     );
     private $_sequences = array();
+    private $tabids = array();
 
     /**
      * Loads the metadata for the specified table.
@@ -241,6 +242,10 @@ EOD;
     }
 
     protected function getColumnsNumber($tabid) {
+
+        if (isset($this->tabids[$tabid])) {
+            return $this->tabids[$tabid];
+        }
         $qry = "SELECT colno, TRIM(colname) as colname FROM syscolumns where tabid = :tabid ORDER BY colno ";
         $command = $this->getDbConnection()->createCommand($qry);
         $command->bindValue(':tabid', $tabid);
@@ -248,6 +253,7 @@ EOD;
         foreach ($command->queryAll() as $row) {
             $columns[$row['colno']] = $row['colname'];
         }
+        $this->tabids[$tabid] = $columns;
         return $columns;
     }
 
