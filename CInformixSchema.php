@@ -433,8 +433,8 @@ EOD;
      */
     protected function findTableNames($schema = '') {
         $sql = <<<EOD
-SELECT tabname,
-       owner,
+SELECT TRIM(tabname) AS tabname,
+       TRIM(owner) AS owner,
        CASE
          WHEN systables.flags = 16 AND systables.tabtype = 'T' THEN 'R'
          WHEN systables.tabid IN (SELECT T.tabid
@@ -462,9 +462,6 @@ EOD;
         $rows = $command->queryAll();
         $names = array();
         foreach ($rows as $row) {
-            if ($schema === self::DEFAULT_SCHEMA)
-                $names[] = $row['tabname'];
-            else
                 $names[] = $row['owner'] . '.' . $row['tabname'];
         }
         return $names;
