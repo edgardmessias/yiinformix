@@ -3,6 +3,10 @@ yiinformix
 
 Support the informix database in Yii Framework
 
+## Requirements
+* PHP module pdo_informix;
+* Informix Client SDK installed
+ 
 ## Installation
 * Install yiinformix extension
 * Extract the release file under `protected/extensions`
