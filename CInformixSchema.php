@@ -516,6 +516,23 @@ EOD;
     }
 
     /**
+     * Builds a SQL statement for adding a primary key constraint to an existing table.
+     * @param string $name the name of the primary key constraint.
+     * @param string $table the table that the primary key constraint will be added to.
+     * @param string $columns the name of the column to that the constraint will be added on.
+     * @return string the SQL statement for adding a primary key constraint to an existing table.
+     * @since 1.1.13
+     */
+    public function addPrimaryKey($name, $table, $columns) {
+        $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
+        foreach ($columns as $i => $col)
+            $columns[$i] = $this->quoteColumnName($col);
+        return 'ALTER TABLE ' . $this->quoteTableName($table)
+                . ' ADD CONSTRAINT PRIMARY KEY (' . implode(', ', $columns) . ' )'
+                . ' CONSTRAINT ' . $this->quoteColumnName($name);
+    }
+
+    /**
      * Resets the sequence value of a table's primary key.
      * The sequence will be reset such that the primary key of the next new row inserted
      * will have the specified value or 1.
