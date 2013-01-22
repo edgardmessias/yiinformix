@@ -524,4 +524,14 @@ EOD;
         }
     }
 
+    /**
+     * Enables or disables integrity check.
+     * @param boolean $check whether to turn on or off the integrity check.
+     * @param string $schema the schema of the tables. Defaults to empty string, meaning the current or default schema.
+     * @since 1.1
+     */
+    public function checkIntegrity($check = true, $schema = '') {
+        $this->getDbConnection()->createCommand('SET CONSTRAINTS ALL ' . ($check ? 'IMMEDIATE' : 'DEFERRED'))->execute();
+    }
+
 }
