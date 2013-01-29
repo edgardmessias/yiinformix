@@ -117,38 +117,9 @@ class CInformixSchema extends CDbSchema {
 SELECT syscolumns.colname,
        syscolumns.colmin,
        syscolumns.colmax,
+       syscolumns.coltype,
+       syscolumns.extended_id,
     NOT (coltype>255) AS allownull,
-    CASE MOD(coltype, 256)
-        WHEN  0 THEN 'char'
-        WHEN  1 THEN 'smallint'
-        WHEN  2 THEN 'integer'
-        WHEN  3 THEN 'float'
-        WHEN  4 THEN 'smallfloat'
-        WHEN  5 THEN 'decimal'
-        WHEN  6 THEN 'serial'
-        WHEN  7 THEN 'date'
-        WHEN  8 THEN 'money'
-        WHEN  9 THEN 'null'
-        WHEN 10 THEN 'datetime'
-        WHEN 11 THEN 'byte'
-        WHEN 12 THEN 'text'
-        WHEN 13 THEN 'varchar'
-        WHEN 14 THEN 'interval'
-        WHEN 15 THEN 'nchar'
-        WHEN 16 THEN 'nvarchar'
-        WHEN 17 THEN 'int8'
-        WHEN 18 THEN 'serial8'
-        WHEN 19 THEN 'set'
-        WHEN 20 THEN 'multiset'
-        WHEN 21 THEN 'list'
-        WHEN 22 THEN 'Unnamed ROW'
-        WHEN 40 THEN sysxtdtypes.name
-        WHEN 41 THEN sysxtdtypes.name
-        WHEN 52 THEN 'bigint'
-        WHEN 53 THEN 'bigserial'
-        WHEN 4118 THEN 'Named ROW'
-        ELSE '???'
-    END AS type,
     CASE
         WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)                
         WHEN mod(coltype,256) in (10,14) THEN                   
@@ -196,7 +167,77 @@ EOD;
         if (($columns = $command->queryAll()) === array())
             return false;
 
+        $columnsTypes = array(
+            0 => 'CHAR',
+            1 => 'SMALLINT',
+            2 => 'INTEGER',
+            3 => 'FLOAT',
+            4 => 'SMALLFLOAT',
+            5 => 'DECIMAL',
+            6 => 'SERIAL',
+            7 => 'DATE',
+            8 => 'MONEY',
+            9 => 'NULL',
+            10 => 'DATETIME',
+            11 => 'BYTE',
+            12 => 'TEXT',
+            13 => 'VARCHAR',
+            14 => 'INTERVAL',
+            15 => 'NCHAR',
+            16 => 'NVARCHAR',
+            17 => 'INT8',
+            18 => 'SERIAL8',
+            19 => 'SET',
+            20 => 'MULTISET',
+            21 => 'LIST',
+            22 => 'ROW',
+            23 => 'COLLECTION',
+            24 => 'ROWREF',
+            42 => 'REFSER8',
+            52 => 'BIGINT',
+            53 => 'BIGINT',
+        );
+
+
         foreach ($columns as $column) {
+
+            $coltypebase = (int) $column['coltype'];
+            $coltypereal = $coltypebase % 256;
+
+
+            if (array_key_exists($coltypereal, $columnsTypes)) {
+                $column['type'] = $columnsTypes[$coltypereal];
+                $extended_id = (int) $column['extended_id'];
+
+                switch ($coltypereal) {
+                    case 40:
+                        if ($extended_id == 1) {
+                            $column['type'] = 'LVARCHAR';
+                        } else {
+                            $column['type'] = 'UDTVAR';
+                        }
+                        break;
+                    case 41:
+                        switch ($extended_id) {
+                            case 5:
+                                $column['type'] = 'BOOLEAN';
+                                break;
+                            case 10:
+                                $column['type'] = 'BLOB';
+                                break;
+                            case 11:
+                                $column['type'] = 'CLOB';
+                                break;
+                            default :
+                                $column['type'] = 'UDTFIXED';
+                                break;
+                        }
+                        break;
+                }
+            } else {
+                $column['type'] = 'UNKNOWN';
+            }
+
             $c = $this->createColumn($column);
 
             if ($c->autoIncrement) {
@@ -221,9 +262,9 @@ EOD;
         $c->isPrimaryKey = false;
         $c->isForeignKey = false;
 
-        if (strpos($column['type'], 'char') !== false || strpos($column['type'], 'text') !== false) {
+        if (stripos($column['type'], 'char') !== false || stripos($column['type'], 'text') !== false) {
             $c->size = $column['collength'];
-        } elseif (preg_match('/(real|float|double|decimal)/', $column['type'])) {
+        } elseif (preg_match('/(real|float|double|decimal)/i', $column['type'])) {
             $length = explode(",", $column['collength']);
             $c->size = $length[0];
             $c->precision = $length[0];
