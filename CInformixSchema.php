@@ -439,21 +439,15 @@ EOD;
             $columnsrefer = $this->getColumnsNumber($row['reftabid']);
 
             for ($x = 0; $x < 16; $x++) {
-                $colnobase = $row["basepart{$x}"];
+                $colnobase = (isset($row["basepart{$x}"])) ? abs($row["basepart{$x}"]) : 0;
                 if ($colnobase == 0) {
                     continue;
                 }
-                if ($colnobase < 0) {
-                    $colnobase *= -1;
-                }
                 $colnamebase = $columnsbase[$colnobase];
 
-                $colnoref = $row["refpart{$x}"];
+                $colnoref = (isset($row["refpart{$x}"])) ? abs($row["refpart{$x}"]) : 0;
                 if ($colnoref == 0) {
                     continue;
-                }
-                if ($colnoref < 0) {
-                    $colnoref *= -1;
                 }
                 $colnameref = $columnsrefer[$colnoref];
 
