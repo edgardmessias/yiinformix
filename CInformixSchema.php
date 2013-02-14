@@ -358,13 +358,11 @@ EOD;
             $columns = $this->getColumnsNumber($row['tabid']);
 
             for ($x = 0; $x < 16; $x++) {
-                $colno = $row["part{$x}"];
+                $colno = (isset($row["part{$x}"])) ? abs($row["part{$x}"]) : 0;
                 if ($colno == 0) {
                     continue;
                 }
-                if ($colno < 0) {
-                    $colno *= -1;
-                }
+
                 $colname = $columns[$colno];
                 if (isset($table->columns[$colname])) {
                     $table->columns[$colname]->isPrimaryKey = true;
