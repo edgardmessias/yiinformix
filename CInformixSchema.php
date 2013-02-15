@@ -357,7 +357,7 @@ EOD;
 
             $columns = $this->getColumnsNumber($row['tabid']);
 
-            for ($x = 0; $x < 16; $x++) {
+            for ($x = 1; $x < 16; $x++) {
                 $colno = (isset($row["part{$x}"])) ? abs($row["part{$x}"]) : 0;
                 if ($colno == 0) {
                     continue;
@@ -438,7 +438,7 @@ EOD;
 
             $columnsrefer = $this->getColumnsNumber($row['reftabid']);
 
-            for ($x = 0; $x < 16; $x++) {
+            for ($x = 1; $x < 16; $x++) {
                 $colnobase = (isset($row["basepart{$x}"])) ? abs($row["basepart{$x}"]) : 0;
                 if ($colnobase == 0) {
                     continue;
