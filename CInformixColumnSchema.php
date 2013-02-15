@@ -20,7 +20,7 @@ class CInformixColumnSchema extends CDbColumnSchema {
      * @param string $dbType DB type
      */
     protected function extractType($dbType) {
-        $dbType = trim($dbType);
+        $dbType = strtolower(trim($dbType));
         if (strpos($dbType, '[') !== false || strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false)
             $this->type = 'string';
         elseif (strpos($dbType, 'bool') !== false)
