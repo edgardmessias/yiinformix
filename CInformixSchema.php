@@ -193,6 +193,8 @@ EOD;
             22 => 'ROW',
             23 => 'COLLECTION',
             24 => 'ROWREF',
+            40 => 'VARIABLELENGTH',
+            41 => 'FIXEDLENGTH',
             42 => 'REFSER8',
             52 => 'BIGINT',
             53 => 'BIGINT',
