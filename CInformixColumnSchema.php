@@ -34,6 +34,16 @@ class CInformixColumnSchema extends CDbColumnSchema {
     }
 
     /**
+     * Extracts size, precision and scale information from column's DB type.
+     * @param string $dbType the column's DB type
+     */
+    protected function extractLimit($dbType) {
+        if (!preg_match('/(datetime|interval)/i', $dbType)) {
+            parent::extractLimit($dbType);
+        }
+    }
+
+    /**
      * Extracts the default value for the column.
      * The value is typecasted to correct PHP type.
      * @param mixed $defaultValue the default value obtained from metadata

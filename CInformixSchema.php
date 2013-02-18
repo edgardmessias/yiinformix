@@ -122,7 +122,7 @@ SELECT syscolumns.colname,
     NOT (coltype>255) AS allownull,
     CASE
         WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)                
-        WHEN mod(coltype,256) in (10,14) THEN                   
+        WHEN mod(coltype,256) = 14 THEN                   
             CASE trunc(mod(collength,256)/16)                        
                 WHEN  0 THEN "YEAR"                        
                 WHEN  2 THEN "MONTH"                        
@@ -135,7 +135,34 @@ SELECT syscolumns.colname,
                 WHEN 13 THEN "FRACTION(3)"                        
                 WHEN 14 THEN "FRACTION(4)"                        
                 WHEN 15 THEN "FRACTION(5)"                     
-            END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") : "||                       
+            END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") TO "||                       
+            CASE mod(collength,16)                        
+                WHEN  0 THEN "YEAR"                        
+                WHEN  2 THEN "MONTH"                        
+                WHEN  4 THEN "DAY"                        
+                WHEN  6 THEN "HOUR"                        
+                WHEN  8 THEN "MINUTE"                        
+                WHEN 10 THEN "SECOND"                        
+                WHEN 11 THEN "FRACTION(1)"                        
+                WHEN 12 THEN "FRACTION(2)"                        
+                WHEN 13 THEN "FRACTION(3)"                        
+                WHEN 14 THEN "FRACTION(4)"                        
+                WHEN 15 THEN "FRACTION(5)"                     
+            END                 
+        WHEN mod(coltype,256) = 10 THEN                   
+            CASE trunc(mod(collength,256)/16)                        
+                WHEN  0 THEN "YEAR"                        
+                WHEN  2 THEN "MONTH"                        
+                WHEN  4 THEN "DAY"                        
+                WHEN  6 THEN "HOUR"                        
+                WHEN  8 THEN "MINUTE"                        
+                WHEN 10 THEN "SECOND"                        
+                WHEN 11 THEN "FRACTION(1)"                        
+                WHEN 12 THEN "FRACTION(2)"                        
+                WHEN 13 THEN "FRACTION(3)"                        
+                WHEN 14 THEN "FRACTION(4)"                        
+                WHEN 15 THEN "FRACTION(5)"                     
+            END ||" TO "||                       
             CASE mod(collength,16)                        
                 WHEN  0 THEN "YEAR"                        
                 WHEN  2 THEN "MONTH"                        
@@ -290,7 +317,7 @@ EOD;
 
         if (preg_match('/(char|real|float|double|decimal|money)/i', $column['type'])) {
             $column['type'] .= '(' . $column['collength'] . ')';
-        } elseif (stripos($column['type'], 'datetime') !== false) {
+        } elseif (preg_match('/(datetime|interval)/i', $column['type'])) {
             $column['type'] .= ' ' . $column['collength'];
         }
 
