@@ -283,24 +283,15 @@ EOD;
         $c = new CInformixColumnSchema;
         $c->name = $column['colname'];
         $c->rawName = $this->quoteColumnName($c->name);
-        $c->allowNull = $column['allownull'];
+        $c->allowNull = (boolean) $column['allownull'];
         $c->isPrimaryKey = false;
         $c->isForeignKey = false;
+        $c->autoIncrement = stripos($column['type'], 'serial') !== false;
 
-        if (stripos($column['type'], 'char') !== false || stripos($column['type'], 'text') !== false) {
-            $c->size = $column['collength'];
-        } elseif (preg_match('/(real|float|double|decimal)/i', $column['type'])) {
-            $length = explode(",", $column['collength']);
-            $c->size = $length[0];
-            $c->precision = $length[0];
-            $c->scale = $length[1];
-        }
-
-
-        if (stripos($column['type'], 'serial') !== false) {
-            $c->autoIncrement = true;
-        } else {
-            $c->autoIncrement = false;
+        if (preg_match('/(char|real|float|double|decimal|money)/i', $column['type'])) {
+            $column['type'] .= '(' . $column['collength'] . ')';
+        } elseif (stripos($column['type'], 'datetime') !== false) {
+            $column['type'] .= ' ' . $column['collength'];
         }
 
         $c->init($column['type'], $column['defvalue']);
@@ -504,7 +495,7 @@ SELECT TRIM(tabname) AS tabname,
          ELSE systables.tabtype
        END AS tabtype
 FROM systables
-WHERE systables.tabid >= 100
+WHERE systables.tabid >= 100 and tabname like 'frp_%'
 EOD;
         if ($schema !== '') {
             $sql .= <<<EOD
