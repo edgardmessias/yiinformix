@@ -150,9 +150,12 @@ SELECT syscolumns.colname,
                 WHEN 15 THEN "FRACTION(5)"                     
             END                 
         ELSE ""||collength          
-    END collength
+    END collength,
+       sysdefaults.type AS deftype,
+       sysdefaults.default AS defvalue    
 FROM systables 
   INNER JOIN syscolumns ON syscolumns.tabid = systables.tabid
+  LEFT JOIN sysdefaults ON sysdefaults.tabid = syscolumns.tabid AND sysdefaults.colno = syscolumns.colno
 WHERE systables.tabid >= 100
 AND   systables.tabname = :table
 AND   systables.owner = :schema
@@ -239,6 +242,27 @@ EOD;
                 $column['type'] = 'UNKNOWN';
             }
 
+            switch ($column['deftype']) {
+                case 'C':
+                    $column['defvalue'] = 'CURRENT';
+                    break;
+                case 'N':
+                    $column['defvalue'] = 'NULL';
+                    break;
+                case 'S':
+                    $column['defvalue'] = 'DBSERVERNAME';
+                    break;
+                case 'T':
+                    $column['defvalue'] = 'TODAY';
+                    break;
+                case 'U':
+                    $column['defvalue'] = 'USER';
+                    break;
+                case 'L':
+                    //Literal value
+                    break;
+            }
+
             $c = $this->createColumn($column);
 
             if ($c->autoIncrement) {
@@ -279,7 +303,7 @@ EOD;
             $c->autoIncrement = false;
         }
 
-        $c->init($column['type'], null);
+        $c->init($column['type'], $column['defvalue']);
         return $c;
     }
 
