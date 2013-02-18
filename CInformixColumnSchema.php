@@ -39,17 +39,15 @@ class CInformixColumnSchema extends CDbColumnSchema {
      * @param mixed $defaultValue the default value obtained from metadata
      */
     protected function extractDefault($defaultValue) {
-        if ($defaultValue === 'true')
+        if (strtolower($defaultValue) === 't')
             $this->defaultValue = true;
-        elseif ($defaultValue === 'false')
+        elseif (strtolower($defaultValue) === 'f')
             $this->defaultValue = false;
-        elseif (strpos($defaultValue, 'nextval') === 0)
+        elseif (preg_match('/(CURRENT|DBSERVERNAME|TODAY|USER|NULL)/i', $defaultValue)) {
             $this->defaultValue = null;
-        elseif (preg_match('/^\'(.*)\'::/', $defaultValue, $matches))
-            $this->defaultValue = $this->typecast(str_replace("''", "'", $matches[1]));
-        elseif (preg_match('/^-?\d+(\.\d*)?$/', $defaultValue, $matches))
-            $this->defaultValue = $this->typecast($defaultValue);
-        // else is null
+        } else {
+            parent::extractDefault($defaultValue);
+        }
     }
 
     /**
