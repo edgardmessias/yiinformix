@@ -153,7 +153,6 @@ SELECT syscolumns.colname,
     END collength
 FROM systables 
   INNER JOIN syscolumns ON syscolumns.tabid = systables.tabid
-  LEFT JOIN sysxtdtypes on sysxtdtypes.extended_id = syscolumns.extended_id
 WHERE systables.tabid >= 100
 AND   systables.tabname = :table
 AND   systables.owner = :schema
