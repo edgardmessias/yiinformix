@@ -21,16 +21,17 @@ class CInformixColumnSchema extends CDbColumnSchema {
      */
     protected function extractType($dbType) {
         $dbType = strtolower(trim($dbType));
-        if (strpos($dbType, '[') !== false || strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false)
+        if (strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false) {
             $this->type = 'string';
-        elseif (strpos($dbType, 'bool') !== false)
+        } elseif (strpos($dbType, 'bool') !== false) {
             $this->type = 'boolean';
-        elseif (preg_match('/(real|float|double|decimal)/', $dbType))
+        } elseif (preg_match('/(real|float|double|decimal|money)/', $dbType)) {
             $this->type = 'double';
-        elseif (preg_match('/(integer|serial|smallint)/', $dbType))
+        } elseif (preg_match('/(integer|serial|smallint|int8|bigint)/', $dbType)) {
             $this->type = 'integer';
-        else
+        } else {
             $this->type = 'string';
+        }
     }
 
     /**
