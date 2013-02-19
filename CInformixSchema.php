@@ -518,7 +518,7 @@ SELECT TRIM(tabname) AS tabname,
          ELSE systables.tabtype
        END AS tabtype
 FROM systables
-WHERE systables.tabid >= 100 and tabname like 'frp_%'
+WHERE systables.tabid >= 100
 EOD;
         if ($schema !== '') {
             $sql .= <<<EOD
