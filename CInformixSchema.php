@@ -269,6 +269,7 @@ EOD;
                 $column['type'] = 'UNKNOWN';
             }
 
+            //http://publib.boulder.ibm.com/infocenter/idshelp/v10/index.jsp?topic=/com.ibm.sqlr.doc/sqlrmst48.htm
             switch ($column['deftype']) {
                 case 'C':
                     $column['defvalue'] = 'CURRENT';
@@ -286,6 +287,14 @@ EOD;
                     $column['defvalue'] = 'USER';
                     break;
                 case 'L':
+                    //CHAR, NCHAR, VARCHAR, NVARCHAR, LVARCHAR, VARIABLELENGTH, FIXEDLENGTH
+                    if (in_array($coltypereal, array(0, 15, 16, 13, 40, 41))) {
+                        $explod = explode(chr(0), $column['defvalue']);
+                        $column['defvalue'] = isset($explod[0]) ? $explod[0] : '';
+                    } else {
+                        $explod = explode(' ', $column['defvalue']);
+                        $column['defvalue'] = isset($explod[1]) ? $explod[1] : '';
+                    }
                     //Literal value
                     break;
             }
