@@ -15,8 +15,6 @@
  */
 class CInformixSchema extends CDbSchema {
 
-    const DEFAULT_SCHEMA = 'informix';
-
     /**
      * @var array the abstract column types mapped to physical column types.
      */
@@ -91,19 +89,13 @@ class CInformixSchema extends CDbSchema {
     protected function resolveTableNames($table, $name) {
         $parts = explode('.', str_replace('"', '', $name));
         if (isset($parts[1])) {
-            $schemaName = $parts[0];
-            $tableName = $parts[1];
+            $table->schemaName = $parts[0];
+            $table->name = $parts[1];
+            $table->rawName = $this->quoteTableName($table->schemaName) . '.' . $this->quoteTableName($table->name);
         } else {
-            $schemaName = self::DEFAULT_SCHEMA;
-            $tableName = $parts[0];
+            $table->name = $parts[0];
+            $table->rawName = $this->quoteTableName($table->name);
         }
-
-        $table->name = $tableName;
-        $table->schemaName = $schemaName;
-        if ($schemaName === self::DEFAULT_SCHEMA)
-            $table->rawName = $this->quoteTableName($tableName);
-        else
-            $table->rawName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);
     }
 
     /**
@@ -185,13 +177,11 @@ FROM systables
   LEFT JOIN sysdefaults ON sysdefaults.tabid = syscolumns.tabid AND sysdefaults.colno = syscolumns.colno
 WHERE systables.tabid >= 100
 AND   systables.tabname = :table
-AND   systables.owner = :schema
 ORDER BY syscolumns.colno
 EOD;
 
         $command = $this->getDbConnection()->createCommand($sql);
         $command->bindValue(':table', $table->name);
-        $command->bindValue(':schema', $table->schemaName);
 
         if (($columns = $command->queryAll()) === array())
             return false;
@@ -302,7 +292,7 @@ EOD;
             $c = $this->createColumn($column);
 
             if ($c->autoIncrement) {
-                $this->_sequences[$table->rawName . '.' . $c->name] = $table->schemaName . '.' . $table->rawName . '.' . $c->name;
+                $this->_sequences[$table->rawName . '.' . $c->name] = $table->rawName . '.' . $c->name;
             }
 
             $table->columns[$c->name] = $c;
@@ -359,13 +349,10 @@ EOD;
 SELECT sysconstraints.constrtype, sysconstraints.idxname
 FROM systables 
   INNER JOIN sysconstraints ON sysconstraints.tabid = systables.tabid
-WHERE systables.tabname = :table
-AND   systables.owner = :schema;
-   
+WHERE systables.tabname = :table;
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
         $command->bindValue(':table', $table->name);
-        $command->bindValue(':schema', $table->schemaName);
         foreach ($command->queryAll() as $row) {
             if ($row['constrtype'] === 'P') { // primary key
                 $this->findPrimaryKey($table, $row['idxname']);
@@ -506,7 +493,7 @@ EOD;
                 if (isset($table->columns[$colnamebase])) {
                     $table->columns[$colnamebase]->isForeignKey = true;
                 }
-                $table->foreignKeys[$colnamebase] = array($row['refowner'] . '.' . $row['reftabname'], $colnameref);
+                $table->foreignKeys[$colnamebase] = array($row['reftabname'], $colnameref);
             }
         }
     }
@@ -531,7 +518,7 @@ SELECT TRIM(tabname) AS tabname,
          ELSE systables.tabtype
        END AS tabtype
 FROM systables
-WHERE systables.tabid >= 100
+WHERE systables.tabid >= 100 and tabname like 'frp_%'
 EOD;
         if ($schema !== '') {
             $sql .= <<<EOD
@@ -548,7 +535,7 @@ EOD;
         $rows = $command->queryAll();
         $names = array();
         foreach ($rows as $row) {
-            $names[] = $row['owner'] . '.' . $row['tabname'];
+            $names[] = $row['tabname'];
         }
         return $names;
     }
