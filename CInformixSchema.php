@@ -113,66 +113,66 @@ SELECT syscolumns.colname,
        syscolumns.extended_id,
     NOT (coltype>255) AS allownull,
     CASE
-        WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)                
-        WHEN mod(coltype,256) = 14 THEN                   
-            CASE trunc(mod(collength,256)/16)                        
-                WHEN  0 THEN "YEAR"                        
-                WHEN  2 THEN "MONTH"                        
-                WHEN  4 THEN "DAY"                        
-                WHEN  6 THEN "HOUR"                        
-                WHEN  8 THEN "MINUTE"                        
-                WHEN 10 THEN "SECOND"                        
-                WHEN 11 THEN "FRACTION(1)"                        
-                WHEN 12 THEN "FRACTION(2)"                        
-                WHEN 13 THEN "FRACTION(3)"                        
-                WHEN 14 THEN "FRACTION(4)"                        
-                WHEN 15 THEN "FRACTION(5)"                     
-            END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") TO "||                       
-            CASE mod(collength,16)                        
-                WHEN  0 THEN "YEAR"                        
-                WHEN  2 THEN "MONTH"                        
-                WHEN  4 THEN "DAY"                        
-                WHEN  6 THEN "HOUR"                        
-                WHEN  8 THEN "MINUTE"                        
-                WHEN 10 THEN "SECOND"                        
-                WHEN 11 THEN "FRACTION(1)"                        
-                WHEN 12 THEN "FRACTION(2)"                        
-                WHEN 13 THEN "FRACTION(3)"                        
-                WHEN 14 THEN "FRACTION(4)"                        
-                WHEN 15 THEN "FRACTION(5)"                     
-            END                 
-        WHEN mod(coltype,256) = 10 THEN                   
-            CASE trunc(mod(collength,256)/16)                        
-                WHEN  0 THEN "YEAR"                        
-                WHEN  2 THEN "MONTH"                        
-                WHEN  4 THEN "DAY"                        
-                WHEN  6 THEN "HOUR"                        
-                WHEN  8 THEN "MINUTE"                        
-                WHEN 10 THEN "SECOND"                        
-                WHEN 11 THEN "FRACTION(1)"                        
-                WHEN 12 THEN "FRACTION(2)"                        
-                WHEN 13 THEN "FRACTION(3)"                        
-                WHEN 14 THEN "FRACTION(4)"                        
-                WHEN 15 THEN "FRACTION(5)"                     
-            END ||" TO "||                       
-            CASE mod(collength,16)                        
-                WHEN  0 THEN "YEAR"                        
-                WHEN  2 THEN "MONTH"                        
-                WHEN  4 THEN "DAY"                        
-                WHEN  6 THEN "HOUR"                        
-                WHEN  8 THEN "MINUTE"                        
-                WHEN 10 THEN "SECOND"                        
-                WHEN 11 THEN "FRACTION(1)"                        
-                WHEN 12 THEN "FRACTION(2)"                        
-                WHEN 13 THEN "FRACTION(3)"                        
-                WHEN 14 THEN "FRACTION(4)"                        
-                WHEN 15 THEN "FRACTION(5)"                     
-            END                 
-        ELSE ""||collength          
+        WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)
+        WHEN mod(coltype,256) = 14 THEN
+            CASE trunc(mod(collength,256)/16)
+                WHEN  0 THEN "YEAR"
+                WHEN  2 THEN "MONTH"
+                WHEN  4 THEN "DAY"
+                WHEN  6 THEN "HOUR"
+                WHEN  8 THEN "MINUTE"
+                WHEN 10 THEN "SECOND"
+                WHEN 11 THEN "FRACTION(1)"
+                WHEN 12 THEN "FRACTION(2)"
+                WHEN 13 THEN "FRACTION(3)"
+                WHEN 14 THEN "FRACTION(4)"
+                WHEN 15 THEN "FRACTION(5)"
+            END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") TO "||
+            CASE mod(collength,16)
+                WHEN  0 THEN "YEAR"
+                WHEN  2 THEN "MONTH"
+                WHEN  4 THEN "DAY"
+                WHEN  6 THEN "HOUR"
+                WHEN  8 THEN "MINUTE"
+                WHEN 10 THEN "SECOND"
+                WHEN 11 THEN "FRACTION(1)"
+                WHEN 12 THEN "FRACTION(2)"
+                WHEN 13 THEN "FRACTION(3)"
+                WHEN 14 THEN "FRACTION(4)"
+                WHEN 15 THEN "FRACTION(5)"
+            END
+        WHEN mod(coltype,256) = 10 THEN
+            CASE trunc(mod(collength,256)/16)
+                WHEN  0 THEN "YEAR"
+                WHEN  2 THEN "MONTH"
+                WHEN  4 THEN "DAY"
+                WHEN  6 THEN "HOUR"
+                WHEN  8 THEN "MINUTE"
+                WHEN 10 THEN "SECOND"
+                WHEN 11 THEN "FRACTION(1)"
+                WHEN 12 THEN "FRACTION(2)"
+                WHEN 13 THEN "FRACTION(3)"
+                WHEN 14 THEN "FRACTION(4)"
+                WHEN 15 THEN "FRACTION(5)"
+            END ||" TO "||
+            CASE mod(collength,16)
+                WHEN  0 THEN "YEAR"
+                WHEN  2 THEN "MONTH"
+                WHEN  4 THEN "DAY"
+                WHEN  6 THEN "HOUR"
+                WHEN  8 THEN "MINUTE"
+                WHEN 10 THEN "SECOND"
+                WHEN 11 THEN "FRACTION(1)"
+                WHEN 12 THEN "FRACTION(2)"
+                WHEN 13 THEN "FRACTION(3)"
+                WHEN 14 THEN "FRACTION(4)"
+                WHEN 15 THEN "FRACTION(5)"
+            END
+        ELSE ""||collength
     END collength,
        sysdefaults.type AS deftype,
-       sysdefaults.default AS defvalue    
-FROM systables 
+       sysdefaults.default AS defvalue
+FROM systables
   INNER JOIN syscolumns ON syscolumns.tabid = systables.tabid
   LEFT JOIN sysdefaults ON sysdefaults.tabid = syscolumns.tabid AND sysdefaults.colno = syscolumns.colno
 WHERE systables.tabid >= 100
@@ -347,7 +347,7 @@ EOD;
     protected function findConstraints($table) {
         $sql = <<<EOD
 SELECT sysconstraints.constrtype, sysconstraints.idxname
-FROM systables 
+FROM systables
   INNER JOIN sysconstraints ON sysconstraints.tabid = systables.tabid
 WHERE systables.tabname = :table;
 EOD;
@@ -459,13 +459,13 @@ SELECT sysindexes.tabid AS basetabid,
        sif.part14 as refpart14,
        sif.part15 as refpart15,
        sif.part16 as refpart16
-FROM sysindexes 
-  INNER JOIN sysconstraints ON sysconstraints.idxname = sysindexes.idxname 
-  INNER JOIN sysreferences ON sysreferences.constrid = sysconstraints.constrid 
-  INNER JOIN systables AS stf ON stf.tabid = sysreferences.ptabid 
-  INNER JOIN sysconstraints AS scf ON scf.constrid = sysreferences. 'primary' 
+FROM sysindexes
+  INNER JOIN sysconstraints ON sysconstraints.idxname = sysindexes.idxname
+  INNER JOIN sysreferences ON sysreferences.constrid = sysconstraints.constrid
+  INNER JOIN systables AS stf ON stf.tabid = sysreferences.ptabid
+  INNER JOIN sysconstraints AS scf ON scf.constrid = sysreferences. 'primary'
   INNER JOIN sysindexes AS sif ON sif.idxname = scf.idxname
-WHERE sysindexes.idxname = :indice;    
+WHERE sysindexes.idxname = :indice;
 
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
@@ -522,7 +522,7 @@ WHERE systables.tabid >= 100 and tabname like 'frp_%'
 EOD;
         if ($schema !== '') {
             $sql .= <<<EOD
-AND   systables.owner=:schema 
+AND   systables.owner=:schema
 EOD;
         }
         $sql .= <<<EOD
