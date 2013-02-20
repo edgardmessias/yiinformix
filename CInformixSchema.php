@@ -122,11 +122,12 @@ SELECT syscolumns.colname,
                 WHEN  6 THEN "HOUR"
                 WHEN  8 THEN "MINUTE"
                 WHEN 10 THEN "SECOND"
-                WHEN 11 THEN "FRACTION(1)"
-                WHEN 12 THEN "FRACTION(2)"
-                WHEN 13 THEN "FRACTION(3)"
-                WHEN 14 THEN "FRACTION(4)"
-                WHEN 15 THEN "FRACTION(5)"
+                WHEN 11 THEN "FRACTION"
+                WHEN 12 THEN "FRACTION"
+                WHEN 13 THEN "FRACTION"
+                WHEN 14 THEN "FRACTION"
+                WHEN 15 THEN "FRACTION"
+                ELSE "UNKNOWN"
             END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") TO "||
             CASE mod(collength,16)
                 WHEN  0 THEN "YEAR"
@@ -140,6 +141,7 @@ SELECT syscolumns.colname,
                 WHEN 13 THEN "FRACTION(3)"
                 WHEN 14 THEN "FRACTION(4)"
                 WHEN 15 THEN "FRACTION(5)"
+                ELSE "UNKNOWN"
             END
         WHEN mod(coltype,256) = 10 THEN
             CASE trunc(mod(collength,256)/16)
@@ -154,6 +156,7 @@ SELECT syscolumns.colname,
                 WHEN 13 THEN "FRACTION(3)"
                 WHEN 14 THEN "FRACTION(4)"
                 WHEN 15 THEN "FRACTION(5)"
+                ELSE "UNKNOWN"
             END ||" TO "||
             CASE mod(collength,16)
                 WHEN  0 THEN "YEAR"
@@ -167,6 +170,7 @@ SELECT syscolumns.colname,
                 WHEN 13 THEN "FRACTION(3)"
                 WHEN 14 THEN "FRACTION(4)"
                 WHEN 15 THEN "FRACTION(5)"
+                ELSE "UNKNOWN"
             END
         ELSE ""||collength
     END collength,
