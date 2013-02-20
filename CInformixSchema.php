@@ -111,69 +111,8 @@ SELECT syscolumns.colname,
        syscolumns.colmax,
        syscolumns.coltype,
        syscolumns.extended_id,
-    NOT (coltype>255) AS allownull,
-    CASE
-        WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)
-        WHEN mod(coltype,256) = 14 THEN
-            CASE trunc(mod(collength,256)/16)
-                WHEN  0 THEN "YEAR"
-                WHEN  2 THEN "MONTH"
-                WHEN  4 THEN "DAY"
-                WHEN  6 THEN "HOUR"
-                WHEN  8 THEN "MINUTE"
-                WHEN 10 THEN "SECOND"
-                WHEN 11 THEN "FRACTION"
-                WHEN 12 THEN "FRACTION"
-                WHEN 13 THEN "FRACTION"
-                WHEN 14 THEN "FRACTION"
-                WHEN 15 THEN "FRACTION"
-                ELSE "UNKNOWN"
-            END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") TO "||
-            CASE mod(collength,16)
-                WHEN  0 THEN "YEAR"
-                WHEN  2 THEN "MONTH"
-                WHEN  4 THEN "DAY"
-                WHEN  6 THEN "HOUR"
-                WHEN  8 THEN "MINUTE"
-                WHEN 10 THEN "SECOND"
-                WHEN 11 THEN "FRACTION(1)"
-                WHEN 12 THEN "FRACTION(2)"
-                WHEN 13 THEN "FRACTION(3)"
-                WHEN 14 THEN "FRACTION(4)"
-                WHEN 15 THEN "FRACTION(5)"
-                ELSE "UNKNOWN"
-            END
-        WHEN mod(coltype,256) = 10 THEN
-            CASE trunc(mod(collength,256)/16)
-                WHEN  0 THEN "YEAR"
-                WHEN  2 THEN "MONTH"
-                WHEN  4 THEN "DAY"
-                WHEN  6 THEN "HOUR"
-                WHEN  8 THEN "MINUTE"
-                WHEN 10 THEN "SECOND"
-                WHEN 11 THEN "FRACTION(1)"
-                WHEN 12 THEN "FRACTION(2)"
-                WHEN 13 THEN "FRACTION(3)"
-                WHEN 14 THEN "FRACTION(4)"
-                WHEN 15 THEN "FRACTION(5)"
-                ELSE "UNKNOWN"
-            END ||" TO "||
-            CASE mod(collength,16)
-                WHEN  0 THEN "YEAR"
-                WHEN  2 THEN "MONTH"
-                WHEN  4 THEN "DAY"
-                WHEN  6 THEN "HOUR"
-                WHEN  8 THEN "MINUTE"
-                WHEN 10 THEN "SECOND"
-                WHEN 11 THEN "FRACTION(1)"
-                WHEN 12 THEN "FRACTION(2)"
-                WHEN 13 THEN "FRACTION(3)"
-                WHEN 14 THEN "FRACTION(4)"
-                WHEN 15 THEN "FRACTION(5)"
-                ELSE "UNKNOWN"
-            END
-        ELSE ""||collength
-    END collength,
+       NOT(coltype>255) AS allownull,
+       syscolumns.collength,
        sysdefaults.type AS deftype,
        sysdefaults.default AS defvalue
 FROM systables
@@ -235,6 +174,53 @@ EOD;
                 $extended_id = (int) $column['extended_id'];
 
                 switch ($coltypereal) {
+                    case 5:
+                    case 8:
+                        $column['collength'] = floor($column['collength'] / 256) . ',' . $column['collength'] % 256;
+                        break;
+                    case 14:
+                    case 10:
+                        $datetimeLength = '';
+                        $datetimeTypes = array(
+                            0 => 'YEAR',
+                            2 => 'MONTH',
+                            4 => 'DAY',
+                            6 => 'HOUR',
+                            8 => 'MINUTE',
+                            10 => 'SECOND',
+                            11 => 'FRACTION',
+                            12 => 'FRACTION',
+                            13 => 'FRACTION',
+                            14 => 'FRACTION',
+                            15 => 'FRACTION',
+                        );
+
+                        $largestQualifier = floor(($column['collength'] % 256) / 16);
+                        $smallestQualifier = $column['collength'] % 16;
+
+                        //Largest Qualifier
+                        $datetimeLength .= (isset($datetimeTypes[$largestQualifier])) ? $datetimeTypes[$largestQualifier] : 'UNKNOWN';
+
+                        if ($coltypereal == 14) {
+                            //INTERVAL
+                            $datetimeLength .= '(' . (floor($column['collength'] / 256) + floor(($column['collength'] % 256) / 16) - ($column['collength'] % 16) ) . ')';
+                        } else {
+                            //DATETIME
+                            if (in_array($largestQualifier, array(11, 12, 13, 14, 15))) {
+                                $datetimeLength .= '(' . ($largestQualifier - 10) . ')';
+                            }
+                        }
+                        $datetimeLength .= ' TO ';
+
+                        //Smallest Qualifier
+                        $datetimeLength .= (isset($datetimeTypes[$smallestQualifier])) ? $datetimeTypes[$smallestQualifier] : 'UNKNOWN';
+                        if (in_array($largestQualifier, array(11, 12, 13, 14, 15))) {
+                            $datetimeLength .= '(' . ($largestQualifier - 10) . ')';
+                        }
+
+                        $column['collength'] = $datetimeLength;
+
+                        break;
                     case 40:
                         if ($extended_id == 1) {
                             $column['type'] = 'LVARCHAR';
