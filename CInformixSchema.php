@@ -599,7 +599,7 @@ EOD;
 
             $serialType = $table->getColumn($table->primaryKey)->dbType;
 
-            $this->getDbConnection()->createCommand("ALTER TABLE {$table->rawName} MODIFY ({$table->primaryKey} $serialType ($value)")->execute();
+            $this->getDbConnection()->createCommand("ALTER TABLE {$table->rawName} MODIFY ({$table->primaryKey} $serialType ($value))")->execute();
         }
     }
 
