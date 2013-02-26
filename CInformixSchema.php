@@ -8,7 +8,7 @@
  */
 
 /**
- * CInformixSchema is the class for retrieving metadata information from a PostgreSQL database.
+ * CInformixSchema is the class for retrieving metadata information from a Informix database.
  *
  * @author Edgard L. Messias <edgardmessias@gmail.com>
  * @package ext.yiinformix
@@ -285,7 +285,7 @@ EOD;
     /**
      * Collects primary key information.
      * @param CInformixTableSchema $table the table metadata
-     * @param string $indice pgsql primary key index list
+     * @param string $indice Informix primary key index name
      */
     protected function findPrimaryKey($table, $indice) {
         $sql = <<<EOD
@@ -341,7 +341,7 @@ EOD;
     /**
      * Collects foreign key information.
      * @param CInformixTableSchema $table the table metadata
-     * @param string $indice pgsql foreign key definition
+     * @param string $indice Informix foreign key index name
      */
     protected function findForeignKey($table, $indice) {
         $sql = <<<EOD
