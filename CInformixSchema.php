@@ -15,8 +15,6 @@
  */
 class CInformixSchema extends CDbSchema {
 
-    const DEFAULT_SCHEMA = 'informix';
-
     /**
      * @var array the abstract column types mapped to physical column types.
      */
@@ -91,19 +89,13 @@ class CInformixSchema extends CDbSchema {
     protected function resolveTableNames($table, $name) {
         $parts = explode('.', str_replace('"', '', $name));
         if (isset($parts[1])) {
-            $schemaName = $parts[0];
-            $tableName = $parts[1];
+            $table->schemaName = $parts[0];
+            $table->name = $parts[1];
+            $table->rawName = $this->quoteTableName($table->schemaName) . '.' . $this->quoteTableName($table->name);
         } else {
-            $schemaName = self::DEFAULT_SCHEMA;
-            $tableName = $parts[0];
+            $table->name = $parts[0];
+            $table->rawName = $this->quoteTableName($table->name);
         }
-
-        $table->name = $tableName;
-        $table->schemaName = $schemaName;
-        if ($schemaName === self::DEFAULT_SCHEMA)
-            $table->rawName = $this->quoteTableName($tableName);
-        else
-            $table->rawName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);
     }
 
     /**
@@ -117,90 +109,180 @@ class CInformixSchema extends CDbSchema {
 SELECT syscolumns.colname,
        syscolumns.colmin,
        syscolumns.colmax,
-    NOT (coltype>255) AS allownull,
-    CASE MOD(coltype, 256)
-        WHEN  0 THEN 'char'
-        WHEN  1 THEN 'smallint'
-        WHEN  2 THEN 'integer'
-        WHEN  3 THEN 'float'
-        WHEN  4 THEN 'smallfloat'
-        WHEN  5 THEN 'decimal'
-        WHEN  6 THEN 'serial'
-        WHEN  7 THEN 'date'
-        WHEN  8 THEN 'money'
-        WHEN  9 THEN 'null'
-        WHEN 10 THEN 'datetime'
-        WHEN 11 THEN 'byte'
-        WHEN 12 THEN 'text'
-        WHEN 13 THEN 'varchar'
-        WHEN 14 THEN 'interval'
-        WHEN 15 THEN 'nchar'
-        WHEN 16 THEN 'nvarchar'
-        WHEN 17 THEN 'int8'
-        WHEN 18 THEN 'serial8'
-        WHEN 19 THEN 'set'
-        WHEN 20 THEN 'multiset'
-        WHEN 21 THEN 'list'
-        WHEN 22 THEN 'Unnamed ROW'
-        WHEN 40 THEN sysxtdtypes.name
-        WHEN 41 THEN sysxtdtypes.name
-        WHEN 52 THEN 'bigint'
-        WHEN 53 THEN 'bigserial'
-        WHEN 4118 THEN 'Named ROW'
-        ELSE '???'
-    END AS type,
-    CASE
-        WHEN mod(coltype,256) in (5,8) THEN trunc(collength/256)||","||mod(collength,256)                
-        WHEN mod(coltype,256) in (10,14) THEN                   
-            CASE trunc(mod(collength,256)/16)                        
-                WHEN  0 THEN "YEAR"                        
-                WHEN  2 THEN "MONTH"                        
-                WHEN  4 THEN "DAY"                        
-                WHEN  6 THEN "HOUR"                        
-                WHEN  8 THEN "MINUTE"                        
-                WHEN 10 THEN "SECOND"                        
-                WHEN 11 THEN "FRACTION(1)"                        
-                WHEN 12 THEN "FRACTION(2)"                        
-                WHEN 13 THEN "FRACTION(3)"                        
-                WHEN 14 THEN "FRACTION(4)"                        
-                WHEN 15 THEN "FRACTION(5)"                     
-            END ||"("||trunc(collength/256)+trunc(mod(collength,256)/16)-mod(collength,16)||") : "||                       
-            CASE mod(collength,16)                        
-                WHEN  0 THEN "YEAR"                        
-                WHEN  2 THEN "MONTH"                        
-                WHEN  4 THEN "DAY"                        
-                WHEN  6 THEN "HOUR"                        
-                WHEN  8 THEN "MINUTE"                        
-                WHEN 10 THEN "SECOND"                        
-                WHEN 11 THEN "FRACTION(1)"                        
-                WHEN 12 THEN "FRACTION(2)"                        
-                WHEN 13 THEN "FRACTION(3)"                        
-                WHEN 14 THEN "FRACTION(4)"                        
-                WHEN 15 THEN "FRACTION(5)"                     
-            END                 
-        ELSE ""||collength          
-    END collength
-FROM systables 
+       syscolumns.coltype,
+       syscolumns.extended_id,
+       NOT(coltype>255) AS allownull,
+       syscolumns.collength,
+       sysdefaults.type AS deftype,
+       sysdefaults.default AS defvalue
+FROM systables
   INNER JOIN syscolumns ON syscolumns.tabid = systables.tabid
-  LEFT JOIN sysxtdtypes on sysxtdtypes.extended_id = syscolumns.extended_id
+  LEFT JOIN sysdefaults ON sysdefaults.tabid = syscolumns.tabid AND sysdefaults.colno = syscolumns.colno
 WHERE systables.tabid >= 100
 AND   systables.tabname = :table
-AND   systables.owner = :schema
 ORDER BY syscolumns.colno
 EOD;
 
         $command = $this->getDbConnection()->createCommand($sql);
         $command->bindValue(':table', $table->name);
-        $command->bindValue(':schema', $table->schemaName);
 
         if (($columns = $command->queryAll()) === array())
             return false;
 
+        $columnsTypes = array(
+            0 => 'CHAR',
+            1 => 'SMALLINT',
+            2 => 'INTEGER',
+            3 => 'FLOAT',
+            4 => 'SMALLFLOAT',
+            5 => 'DECIMAL',
+            6 => 'SERIAL',
+            7 => 'DATE',
+            8 => 'MONEY',
+            9 => 'NULL',
+            10 => 'DATETIME',
+            11 => 'BYTE',
+            12 => 'TEXT',
+            13 => 'VARCHAR',
+            14 => 'INTERVAL',
+            15 => 'NCHAR',
+            16 => 'NVARCHAR',
+            17 => 'INT8',
+            18 => 'SERIAL8',
+            19 => 'SET',
+            20 => 'MULTISET',
+            21 => 'LIST',
+            22 => 'ROW',
+            23 => 'COLLECTION',
+            24 => 'ROWREF',
+            40 => 'VARIABLELENGTH',
+            41 => 'FIXEDLENGTH',
+            42 => 'REFSER8',
+            52 => 'BIGINT',
+            53 => 'BIGINT',
+        );
+
+
         foreach ($columns as $column) {
+
+            $coltypebase = (int) $column['coltype'];
+            $coltypereal = $coltypebase % 256;
+
+
+            if (array_key_exists($coltypereal, $columnsTypes)) {
+                $column['type'] = $columnsTypes[$coltypereal];
+                $extended_id = (int) $column['extended_id'];
+
+                switch ($coltypereal) {
+                    case 5:
+                    case 8:
+                        $column['collength'] = floor($column['collength'] / 256) . ',' . $column['collength'] % 256;
+                        break;
+                    case 14:
+                    case 10:
+                        $datetimeLength = '';
+                        $datetimeTypes = array(
+                            0 => 'YEAR',
+                            2 => 'MONTH',
+                            4 => 'DAY',
+                            6 => 'HOUR',
+                            8 => 'MINUTE',
+                            10 => 'SECOND',
+                            11 => 'FRACTION',
+                            12 => 'FRACTION',
+                            13 => 'FRACTION',
+                            14 => 'FRACTION',
+                            15 => 'FRACTION',
+                        );
+
+                        $largestQualifier = floor(($column['collength'] % 256) / 16);
+                        $smallestQualifier = $column['collength'] % 16;
+
+                        //Largest Qualifier
+                        $datetimeLength .= (isset($datetimeTypes[$largestQualifier])) ? $datetimeTypes[$largestQualifier] : 'UNKNOWN';
+
+                        if ($coltypereal == 14) {
+                            //INTERVAL
+                            $datetimeLength .= '(' . (floor($column['collength'] / 256) + floor(($column['collength'] % 256) / 16) - ($column['collength'] % 16) ) . ')';
+                        } else {
+                            //DATETIME
+                            if (in_array($largestQualifier, array(11, 12, 13, 14, 15))) {
+                                $datetimeLength .= '(' . ($largestQualifier - 10) . ')';
+                            }
+                        }
+                        $datetimeLength .= ' TO ';
+
+                        //Smallest Qualifier
+                        $datetimeLength .= (isset($datetimeTypes[$smallestQualifier])) ? $datetimeTypes[$smallestQualifier] : 'UNKNOWN';
+                        if (in_array($largestQualifier, array(11, 12, 13, 14, 15))) {
+                            $datetimeLength .= '(' . ($largestQualifier - 10) . ')';
+                        }
+
+                        $column['collength'] = $datetimeLength;
+
+                        break;
+                    case 40:
+                        if ($extended_id == 1) {
+                            $column['type'] = 'LVARCHAR';
+                        } else {
+                            $column['type'] = 'UDTVAR';
+                        }
+                        break;
+                    case 41:
+                        switch ($extended_id) {
+                            case 5:
+                                $column['type'] = 'BOOLEAN';
+                                break;
+                            case 10:
+                                $column['type'] = 'BLOB';
+                                break;
+                            case 11:
+                                $column['type'] = 'CLOB';
+                                break;
+                            default :
+                                $column['type'] = 'UDTFIXED';
+                                break;
+                        }
+                        break;
+                }
+            } else {
+                $column['type'] = 'UNKNOWN';
+            }
+
+            //http://publib.boulder.ibm.com/infocenter/idshelp/v10/index.jsp?topic=/com.ibm.sqlr.doc/sqlrmst48.htm
+            switch ($column['deftype']) {
+                case 'C':
+                    $column['defvalue'] = 'CURRENT';
+                    break;
+                case 'N':
+                    $column['defvalue'] = 'NULL';
+                    break;
+                case 'S':
+                    $column['defvalue'] = 'DBSERVERNAME';
+                    break;
+                case 'T':
+                    $column['defvalue'] = 'TODAY';
+                    break;
+                case 'U':
+                    $column['defvalue'] = 'USER';
+                    break;
+                case 'L':
+                    //CHAR, NCHAR, VARCHAR, NVARCHAR, LVARCHAR, VARIABLELENGTH, FIXEDLENGTH
+                    if (in_array($coltypereal, array(0, 15, 16, 13, 40, 41))) {
+                        $explod = explode(chr(0), $column['defvalue']);
+                        $column['defvalue'] = isset($explod[0]) ? $explod[0] : '';
+                    } else {
+                        $explod = explode(' ', $column['defvalue']);
+                        $column['defvalue'] = isset($explod[1]) ? $explod[1] : '';
+                    }
+                    //Literal value
+                    break;
+            }
+
             $c = $this->createColumn($column);
 
             if ($c->autoIncrement) {
-                $this->_sequences[$table->rawName . '.' . $c->name] = $table->schemaName . '.' . $table->rawName . '.' . $c->name;
+                $this->_sequences[$table->rawName . '.' . $c->name] = $table->rawName . '.' . $c->name;
             }
 
             $table->columns[$c->name] = $c;
@@ -217,27 +299,18 @@ EOD;
         $c = new CInformixColumnSchema;
         $c->name = $column['colname'];
         $c->rawName = $this->quoteColumnName($c->name);
-        $c->allowNull = $column['allownull'];
+        $c->allowNull = (boolean) $column['allownull'];
         $c->isPrimaryKey = false;
         $c->isForeignKey = false;
+        $c->autoIncrement = stripos($column['type'], 'serial') !== false;
 
-        if (strpos($column['type'], 'char') !== false || strpos($column['type'], 'text') !== false) {
-            $c->size = $column['collength'];
-        } elseif (preg_match('/(real|float|double|decimal)/', $column['type'])) {
-            $length = explode(",", $column['collength']);
-            $c->size = $length[0];
-            $c->precision = $length[0];
-            $c->scale = $length[1];
+        if (preg_match('/(char|real|float|double|decimal|money)/i', $column['type'])) {
+            $column['type'] .= '(' . $column['collength'] . ')';
+        } elseif (preg_match('/(datetime|interval)/i', $column['type'])) {
+            $column['type'] .= ' ' . $column['collength'];
         }
 
-
-        if (stripos($column['type'], 'serial') !== false) {
-            $c->autoIncrement = true;
-        } else {
-            $c->autoIncrement = false;
-        }
-
-        $c->init($column['type'], null);
+        $c->init($column['type'], $column['defvalue']);
         return $c;
     }
 
@@ -264,15 +337,12 @@ EOD;
     protected function findConstraints($table) {
         $sql = <<<EOD
 SELECT sysconstraints.constrtype, sysconstraints.idxname
-FROM systables 
+FROM systables
   INNER JOIN sysconstraints ON sysconstraints.tabid = systables.tabid
-WHERE systables.tabname = :table
-AND   systables.owner = :schema;
-   
+WHERE systables.tabname = :table;
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
         $command->bindValue(':table', $table->name);
-        $command->bindValue(':schema', $table->schemaName);
         foreach ($command->queryAll() as $row) {
             if ($row['constrtype'] === 'P') { // primary key
                 $this->findPrimaryKey($table, $row['idxname']);
@@ -316,14 +386,12 @@ EOD;
 
             $columns = $this->getColumnsNumber($row['tabid']);
 
-            for ($x = 0; $x < 16; $x++) {
-                $colno = $row["part{$x}"];
+            for ($x = 1; $x < 16; $x++) {
+                $colno = (isset($row["part{$x}"])) ? abs($row["part{$x}"]) : 0;
                 if ($colno == 0) {
                     continue;
                 }
-                if ($colno < 0) {
-                    $colno *= -1;
-                }
+
                 $colname = $columns[$colno];
                 if (isset($table->columns[$colname])) {
                     $table->columns[$colname]->isPrimaryKey = true;
@@ -381,13 +449,13 @@ SELECT sysindexes.tabid AS basetabid,
        sif.part14 as refpart14,
        sif.part15 as refpart15,
        sif.part16 as refpart16
-FROM sysindexes 
-  INNER JOIN sysconstraints ON sysconstraints.idxname = sysindexes.idxname 
-  INNER JOIN sysreferences ON sysreferences.constrid = sysconstraints.constrid 
-  INNER JOIN systables AS stf ON stf.tabid = sysreferences.ptabid 
-  INNER JOIN sysconstraints AS scf ON scf.constrid = sysreferences. 'primary' 
+FROM sysindexes
+  INNER JOIN sysconstraints ON sysconstraints.idxname = sysindexes.idxname
+  INNER JOIN sysreferences ON sysreferences.constrid = sysconstraints.constrid
+  INNER JOIN systables AS stf ON stf.tabid = sysreferences.ptabid
+  INNER JOIN sysconstraints AS scf ON scf.constrid = sysreferences. 'primary'
   INNER JOIN sysindexes AS sif ON sif.idxname = scf.idxname
-WHERE sysindexes.idxname = :indice;    
+WHERE sysindexes.idxname = :indice;
 
 EOD;
         $command = $this->getDbConnection()->createCommand($sql);
@@ -399,29 +467,23 @@ EOD;
 
             $columnsrefer = $this->getColumnsNumber($row['reftabid']);
 
-            for ($x = 0; $x < 16; $x++) {
-                $colnobase = $row["basepart{$x}"];
+            for ($x = 1; $x < 16; $x++) {
+                $colnobase = (isset($row["basepart{$x}"])) ? abs($row["basepart{$x}"]) : 0;
                 if ($colnobase == 0) {
                     continue;
                 }
-                if ($colnobase < 0) {
-                    $colnobase *= -1;
-                }
                 $colnamebase = $columnsbase[$colnobase];
 
-                $colnoref = $row["refpart{$x}"];
+                $colnoref = (isset($row["refpart{$x}"])) ? abs($row["refpart{$x}"]) : 0;
                 if ($colnoref == 0) {
                     continue;
-                }
-                if ($colnoref < 0) {
-                    $colnoref *= -1;
                 }
                 $colnameref = $columnsrefer[$colnoref];
 
                 if (isset($table->columns[$colnamebase])) {
                     $table->columns[$colnamebase]->isForeignKey = true;
                 }
-                $table->foreignKeys[$colnamebase] = array($row['refowner'] . '.' . $row['reftabname'], $colnameref);
+                $table->foreignKeys[$colnamebase] = array($row['reftabname'], $colnameref);
             }
         }
     }
@@ -450,7 +512,7 @@ WHERE systables.tabid >= 100
 EOD;
         if ($schema !== '') {
             $sql .= <<<EOD
-AND   systables.owner=:schema 
+AND   systables.owner=:schema
 EOD;
         }
         $sql .= <<<EOD
@@ -463,7 +525,7 @@ EOD;
         $rows = $command->queryAll();
         $names = array();
         foreach ($rows as $row) {
-            $names[] = $row['owner'] . '.' . $row['tabname'];
+            $names[] = $row['tabname'];
         }
         return $names;
     }
@@ -475,18 +537,6 @@ EOD;
      */
     protected function createCommandBuilder() {
         return new CInformixCommandBuilder($this);
-    }
-
-    /**
-     * Builds a SQL statement for dropping a DB column.
-     * @param string $table the table whose column is to be dropped. The name will be properly quoted by the method.
-     * @param string $column the name of the column to be dropped. The name will be properly quoted by the method.
-     * @return string the SQL statement for dropping a DB column.
-     * @since 1.1.6
-     */
-    public function dropColumn($table, $column) {
-        return "ALTER TABLE " . $this->quoteTableName($table)
-                . " DROP COLUMN " . $this->quoteColumnName($column);
     }
 
     /**
@@ -549,7 +599,7 @@ EOD;
 
             $serialType = $table->getColumn($table->primaryKey)->dbType;
 
-            $this->getDbConnection()->createCommand("ALTER TABLE {$table->rawName} MODIFY ({$table->primaryKey} $serialType ($value)")->execute();
+            $this->getDbConnection()->createCommand("ALTER TABLE {$table->rawName} MODIFY ({$table->primaryKey} $serialType ($value))")->execute();
         }
     }
 

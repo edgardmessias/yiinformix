@@ -20,17 +20,28 @@ class CInformixColumnSchema extends CDbColumnSchema {
      * @param string $dbType DB type
      */
     protected function extractType($dbType) {
-        $dbType = trim($dbType);
-        if (strpos($dbType, '[') !== false || strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false)
+        $dbType = strtolower(trim($dbType));
+        if (strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false) {
             $this->type = 'string';
-        elseif (strpos($dbType, 'bool') !== false)
+        } elseif (strpos($dbType, 'bool') !== false) {
             $this->type = 'boolean';
-        elseif (preg_match('/(real|float|double|decimal)/', $dbType))
+        } elseif (preg_match('/(real|float|double|decimal|money)/', $dbType)) {
             $this->type = 'double';
-        elseif (preg_match('/(integer|serial|smallint)/', $dbType))
+        } elseif (preg_match('/(integer|serial|smallint|int8|bigint)/', $dbType)) {
             $this->type = 'integer';
-        else
+        } else {
             $this->type = 'string';
+        }
+    }
+
+    /**
+     * Extracts size, precision and scale information from column's DB type.
+     * @param string $dbType the column's DB type
+     */
+    protected function extractLimit($dbType) {
+        if (!preg_match('/(datetime|interval)/i', $dbType)) {
+            parent::extractLimit($dbType);
+        }
     }
 
     /**
@@ -39,17 +50,15 @@ class CInformixColumnSchema extends CDbColumnSchema {
      * @param mixed $defaultValue the default value obtained from metadata
      */
     protected function extractDefault($defaultValue) {
-        if ($defaultValue === 'true')
+        if (strtolower($defaultValue) === 't')
             $this->defaultValue = true;
-        elseif ($defaultValue === 'false')
+        elseif (strtolower($defaultValue) === 'f')
             $this->defaultValue = false;
-        elseif (strpos($defaultValue, 'nextval') === 0)
+        elseif (preg_match('/(CURRENT|DBSERVERNAME|TODAY|USER|NULL)/i', $defaultValue)) {
             $this->defaultValue = null;
-        elseif (preg_match('/^\'(.*)\'::/', $defaultValue, $matches))
-            $this->defaultValue = $this->typecast(str_replace("''", "'", $matches[1]));
-        elseif (preg_match('/^-?\d+(\.\d*)?$/', $defaultValue, $matches))
-            $this->defaultValue = $this->typecast($defaultValue);
-        // else is null
+        } else {
+            parent::extractDefault($defaultValue);
+        }
     }
 
     /**
