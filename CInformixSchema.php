@@ -584,11 +584,12 @@ EOD;
      * the next new row's primary key will have a value 1.
      */
     public function resetSequence($table, $value = null) {
-        if ($table->sequenceName !== null && is_string($table->primaryKey)) {
-            if ($value === null)
+        if ($table->sequenceName !== null && is_string($table->primaryKey) && $table->columns[$table->primaryKey]->autoIncrement) {
+            if ($value === null) {
                 $value = $this->getDbConnection()->createCommand("SELECT MAX({$table->primaryKey}) FROM {$table->rawName}")->queryScalar() + 1;
-            else
+            } else {
                 $value = (int) $value;
+            }
 
             $serialType = $table->getColumn($table->primaryKey)->dbType;
 
