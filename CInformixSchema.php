@@ -33,7 +33,6 @@ class CInformixSchema extends CDbSchema {
         'boolean' => 'boolean',
         'money' => 'money',
     );
-    private $_sequences = array();
     private $tabids = array();
 
     /**
@@ -48,16 +47,6 @@ class CInformixSchema extends CDbSchema {
             return null;
         $this->findConstraints($table);
 
-        if (is_string($table->primaryKey) && isset($this->_sequences[$table->rawName . '.' . $table->primaryKey]))
-            $table->sequenceName = $this->_sequences[$table->rawName . '.' . $table->primaryKey];
-        elseif (is_array($table->primaryKey)) {
-            foreach ($table->primaryKey as $pk) {
-                if (isset($this->_sequences[$table->rawName . '.' . $pk])) {
-                    $table->sequenceName = $this->_sequences[$table->rawName . '.' . $pk];
-                    break;
-                }
-            }
-        }
         return $table;
     }
 
@@ -281,10 +270,6 @@ EOD;
 
             $c = $this->createColumn($column);
 
-            if ($c->autoIncrement) {
-                $this->_sequences[$table->rawName . '.' . $c->name] = $table->rawName . '.' . $c->name;
-            }
-
             $table->columns[$c->name] = $c;
         }
         return true;
@@ -402,6 +387,14 @@ EOD;
                     else
                         $table->primaryKey[] = $colname;
                 }
+            }
+        }
+
+        /* @var $c CInformixColumnSchema */
+        foreach ($table->columns as $c) {
+            if ($c->autoIncrement && $c->isPrimaryKey) {
+                $table->sequenceName = $c->rawName;
+                break;
             }
         }
     }
