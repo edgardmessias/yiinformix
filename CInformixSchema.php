@@ -263,6 +263,9 @@ EOD;
                     } else {
                         $explod = explode(' ', $column['defvalue']);
                         $column['defvalue'] = isset($explod[1]) ? $explod[1] : '';
+                        if (in_array($coltypereal, array(3, 5, 8))) {
+                            $column['defvalue'] = (string)(float) $column['defvalue'];
+                        }
                     }
                     //Literal value
                     break;
@@ -289,7 +292,7 @@ EOD;
         $c->isForeignKey = false;
         $c->autoIncrement = stripos($column['type'], 'serial') !== false;
 
-        if (preg_match('/(char|real|float|double|decimal|money)/i', $column['type'])) {
+        if (preg_match('/(char|numeric|decimal|money)/i', $column['type'])) {
             $column['type'] .= '(' . $column['collength'] . ')';
         } elseif (preg_match('/(datetime|interval)/i', $column['type'])) {
             $column['type'] .= ' ' . $column['collength'];
