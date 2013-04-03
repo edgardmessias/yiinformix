@@ -27,14 +27,10 @@ class CInformixCommandBuilder extends CDbCommandBuilder {
         $offset = $offset !== null ? (int) $offset : 0;
 
         if ($offset > 0) { //just limit
-            $sql = preg_replace('/^([\s(])*SELECT( DISTINCT)?(\s+SKIP\s+\d+\s*)?/i', "\\1SELECT\\2 SKIP $offset", $sql);
-        } else {
-            $sql = preg_replace('/^([\s(])*SELECT( DISTINCT)?(\s+SKIP\s+\d+\s*)?/i', "\\1SELECT\\2 ", $sql);
+            $sql = preg_replace('/^([\s(])*SELECT(\s+DISTINCT)?(\s+SKIP\s+\d+)?/i', "\\1SELECT\\2 SKIP $offset", $sql);
         }
         if ($limit > 0) { //just offset
-            $sql = preg_replace('/^([\s(])*SELECT( DISTINCT)?(\s+SKIP\s+\d+\s*)?(\s*LIMIT\s+\d+\s*)?/i', "\\1SELECT\\2\\3 LIMIT $limit ", $sql);
-        } else {
-            $sql = preg_replace('/^([\s(])*SELECT( DISTINCT)?(\s+SKIP\s+\d+\s*)?(\s*LIMIT\s+\d+\s*)?/i', "\\1SELECT\\2\\3 ", $sql);
+            $sql = preg_replace('/^([\s(])*SELECT(\s+DISTINCT)?(\s+SKIP\s+\d+)?(\s+LIMIT\s+\d+)?/i', "\\1SELECT\\2\\3 LIMIT $limit", $sql);
         }
         return $sql;
     }
