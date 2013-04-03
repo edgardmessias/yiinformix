@@ -263,6 +263,9 @@ EOD;
                     } else {
                         $explod = explode(' ', $column['defvalue']);
                         $column['defvalue'] = isset($explod[1]) ? $explod[1] : '';
+                        if (in_array($coltypereal, array(3, 5, 8))) {
+                            $column['defvalue'] = (string)(float) $column['defvalue'];
+                        }
                     }
                     //Literal value
                     break;
