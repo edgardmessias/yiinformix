@@ -27,10 +27,10 @@ class CInformixCommandBuilder extends CDbCommandBuilder {
         $offset = $offset !== null ? (int) $offset : 0;
 
         if ($offset > 0) { //just limit
-            $sql = preg_replace('/^([\s(])*SELECT(\s+DISTINCT)?(\s+SKIP\s+\d+)?/i', "\\1SELECT\\2 SKIP $offset", $sql);
+            $sql = preg_replace('/^([\s(])*SELECT(\s+SKIP\s+\d+)?(\s+DISTINCT)?/i', "\\1SELECT SKIP $offset\\3", $sql);
         }
         if ($limit > 0) { //just offset
-            $sql = preg_replace('/^([\s(])*SELECT(\s+DISTINCT)?(\s+SKIP\s+\d+)?(\s+LIMIT\s+\d+)?/i', "\\1SELECT\\2\\3 LIMIT $limit", $sql);
+            $sql = preg_replace('/^([\s(])*SELECT(\s+SKIP\s+\d+)?(\s+LIMIT\s+\d+)?(\s+DISTINCT)?/i', "\\1SELECT\\2 LIMIT $limit\\4", $sql);
         }
         return $sql;
     }
