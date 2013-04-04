@@ -45,7 +45,7 @@ class CInformixCommandBuilder extends CDbCommandBuilder {
     public function createUpdateCommand($table, $data, $criteria) {
         foreach ($data as $name => $value) {
             if (($column = $table->getColumn($name)) !== null) {
-                if (is_string($table->primaryKey) && $table->primaryKey == $column->name) {
+                if ($column->autoIncrement) {
                     unset($data[$name]);
                     continue;
                 }
