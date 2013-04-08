@@ -562,6 +562,38 @@ EOD;
     }
 
     /**
+     * Builds a SQL statement for adding a foreign key constraint to an existing table.
+     * The method will properly quote the table and column names.
+     * @param string $name the name of the foreign key constraint.
+     * @param string $table the table that the foreign key constraint will be added to.
+     * @param string $columns the name of the column to that the constraint will be added on. If there are multiple columns, separate them with commas.
+     * @param string $refTable the table that the foreign key references to.
+     * @param string $refColumns the name of the column that the foreign key references to. If there are multiple columns, separate them with commas.
+     * @param string $delete the ON DELETE option. Most DBMS support these options: RESTRICT, CASCADE, NO ACTION, SET DEFAULT, SET NULL
+     * @param string $update the ON UPDATE option. Most DBMS support these options: RESTRICT, CASCADE, NO ACTION, SET DEFAULT, SET NULL
+     * @return string the SQL statement for adding a foreign key constraint to an existing table.
+     * @since 1.1.6
+     */
+    public function addForeignKey($name, $table, $columns, $refTable, $refColumns, $delete = null, $update = null) {
+        $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
+        foreach ($columns as $i => $col)
+            $columns[$i] = $this->quoteColumnName($col);
+        $refColumns = preg_split('/\s*,\s*/', $refColumns, -1, PREG_SPLIT_NO_EMPTY);
+        foreach ($refColumns as $i => $col)
+            $refColumns[$i] = $this->quoteColumnName($col);
+        $sql = 'ALTER TABLE ' . $this->quoteTableName($table)
+                . ' ADD CONSTRAINT FOREIGN KEY (' . implode(', ', $columns) . ')'
+                . ' REFERENCES ' . $this->quoteTableName($refTable)
+                . ' (' . implode(', ', $refColumns) . ')'
+                . ' CONSTRAINT ' . $this->quoteColumnName($name);
+        if ($delete !== null)
+            $sql.=' ON DELETE ' . $delete;
+        if ($update !== null)
+            $sql.=' ON UPDATE ' . $update;
+        return $sql;
+    }
+
+    /**
      * Builds a SQL statement for dropping an index.
      * @param string $name the name of the index to be dropped. The name will be properly quoted by the method.
      * @param string $table the table whose index is to be dropped. The name will be properly quoted by the method.
