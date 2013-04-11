@@ -95,18 +95,18 @@ class CInformixTest extends CTestCase
 	public function testDropColumn()
 	{
 		$sql=$this->db->schema->dropColumn('test', 'id');
-		$expect='ALTER TABLE test DROP COLUMN id';
+		$expect='ALTER TABLE test DROP id';
 		$this->assertEquals($expect, $sql);
 	}
 
 	public function testAddForeignKey()
 	{
 		$sql=$this->db->schema->addForeignKey('fk_test', 'profile', 'user_id', 'users', 'id');
-		$expect='ALTER TABLE profile ADD CONSTRAINT fk_test FOREIGN KEY (user_id) REFERENCES users (id)';
+		$expect='ALTER TABLE profile ADD CONSTRAINT FOREIGN KEY (user_id) REFERENCES users (id) CONSTRAINT fk_test';
 		$this->assertEquals($expect, $sql);
 
 		$sql=$this->db->schema->addForeignKey('fk_test', 'profile', 'user_id', 'users', 'id','CASCADE','RESTRICTED');
-		$expect='ALTER TABLE profile ADD CONSTRAINT fk_test FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICTED';
+		$expect='ALTER TABLE profile ADD CONSTRAINT FOREIGN KEY (user_id) REFERENCES users (id) CONSTRAINT fk_test ON DELETE CASCADE ON UPDATE RESTRICTED';
 		$this->assertEquals($expect, $sql);
 	}
 
