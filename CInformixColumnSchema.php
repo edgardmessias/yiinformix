@@ -67,7 +67,7 @@ class CInformixColumnSchema extends CDbColumnSchema {
      * @return mixed converted value
      */
     public function typecast($value) {
-        if (gettype($value) === $this->type || $value === null || $value instanceof CDbExpression)
+        if ($value === null || $value instanceof CDbExpression)
             return $value;
         if ($value === '' && $this->allowNull)
             return $this->type === 'string' ? '' : null;
