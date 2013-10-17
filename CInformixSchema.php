@@ -507,13 +507,9 @@ FROM systables
 WHERE systables.tabid >= 100
 EOD;
         if ($schema !== '') {
-            $sql .= <<<EOD
-AND   systables.owner=:schema
-EOD;
+            $sql .= " AND systables.owner=:schema";
         }
-        $sql .= <<<EOD
-ORDER BY systables.tabname;
-EOD;
+        $sql .= " ORDER BY systables.tabname;";
         $command = $this->getDbConnection()->createCommand($sql);
         if ($schema !== '') {
             $command->bindParam(':schema', $schema);
