@@ -76,4 +76,22 @@ class CInformixCommandBuilder extends CDbCommandBuilder {
         return $this->composeMultipleInsertCommand($table, $data, $templates);
     }
 
+    /**
+     * Generates the expression for selecting rows with specified composite key values.
+     * @param CDbTableSchema $table the table schema
+     * @param array $values list of primary key values to be selected within
+     * @param string $prefix column prefix (ended with dot)
+     * @return string the expression for selection
+     */
+    protected function createCompositeInCondition($table, $values, $prefix) {
+        $vs = array();
+        foreach ($values as $value) {
+            $c = array();
+            foreach ($value as $k => $v)
+                $c[] = $prefix . $table->columns[$k]->rawName . '=' . $v;
+            $vs[] = '(' . implode(' AND ', $c) . ')';
+        }
+        return '(' . implode(' OR ', $vs) . ')';
+    }
+
 }
